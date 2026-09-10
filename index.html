@@ -82,7 +82,8 @@
   .status { font-size:12px; color:#3DD68C; margin-top:12px; min-height:16px; }
   .status.bad { color:#FF7A7A; }
 
-  table.grid { width:100%; border-collapse:collapse; }
+  #gwrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table.grid { width:100%; border-collapse:collapse; min-width:720px; }
   table.grid th { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); }
   table.grid td { padding:0; border:1px solid var(--line); }
   table.grid input { width:100%; background:transparent; border:0; color:var(--ink); font-size:12px; padding:8px; border-radius:0; }
@@ -112,11 +113,54 @@
   #setup p { font-size:13px; line-height:1.7; color:var(--gold); margin-bottom:10px; }
   #setup code { background:var(--navy); padding:2px 6px; color:var(--ink); font-size:12px; }
 
-  @media (max-width:700px) {
-    #login h1 { font-size:40px; }
-    .row { grid-template-columns:116px 1fr; }
-    .unid, .when, .tag { grid-column:2; justify-self:start; }
+  @media (max-width:760px) {
+    body { padding:12px; -webkit-text-size-adjust:100%; }
+
+    .topbar { align-items:center; padding-bottom:11px; gap:10px; }
+    .brand h1 { font-size:23px; }
+    .brand p { font-size:10px; letter-spacing:.12em; margin-top:3px; }
+    .who { font-size:10px; gap:7px; flex-wrap:wrap; margin-top:7px !important; }
+    .clock .t { font-size:30px; }
+    .clock .d { font-size:10px; letter-spacing:.1em; }
+    .cut { font-size:11px; padding:9px 0 12px; line-height:1.55; }
+
+    .tabs { gap:5px; }
+    .tabs button { padding:9px 12px; font-size:10px; letter-spacing:.07em; flex:1 1 auto; }
+    .tabs .spacer { display:none; }
+    .sync { width:100%; text-align:right; order:9; }
+
+    .filters { gap:6px; padding:10px; }
+    .filters label { width:100%; margin-bottom:-2px; }
+    .filters select, .filters input { flex:1 1 130px; min-width:0; width:auto; }
+    .filters .chips { width:100%; margin-left:0; margin-top:4px; }
+    .filters .chips button { flex:1; padding:9px 4px; }
+
+    .lane { margin-top:18px; }
+    .lane-head h2 { font-size:17px; letter-spacing:.09em; }
+    .lane-head .note { display:none; }
+
+    .row { grid-template-columns:1fr auto; gap:7px 10px; padding:12px 13px; }
+    .row > .pill { grid-column:1; grid-row:1; justify-self:start; padding:5px 12px; font-size:13px; }
+    .row > .when { grid-column:2; grid-row:1; justify-self:end; font-size:18px; }
+    .row > div    { grid-column:1/-1; grid-row:2; }
+    .row > .unid  { grid-column:1; grid-row:3; justify-self:start; font-size:13px; }
+    .row > .tag   { grid-column:2; grid-row:3; justify-self:end; }
+    .prod { font-size:14px; line-height:1.35; }
+    .meta { font-size:11px; line-height:1.45; }
+
+    .sheet { padding:0; align-items:flex-end; }
+    .card, .card.wide { max-width:100%; max-height:94vh; padding:18px 16px 22px; border-radius:10px 10px 0 0; }
+    .card h3 { font-size:20px; }
     .fields { grid-template-columns:1fr; }
+    .opts button { flex:1 1 auto; padding:11px 12px; }
+    .acts { flex-wrap:wrap; }
+    .acts button { flex:1 1 auto; padding:12px 14px; }
+    .acts .spacer { display:none; }
+    .acts .go { order:-1; width:100%; flex-basis:100%; }
+
+    #login { padding:14px; }
+    #login h1 { font-size:38px; }
+    #login .panel { padding:26px 20px 24px; }
   }
 </style>
 </head>
