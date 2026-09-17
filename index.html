@@ -2,657 +2,149 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+
+<!-- Política de segurança de conteúdo.
+     script-src 'self' só é possível porque nenhum JavaScript mora mais dentro
+     deste arquivo. Se um dia o Supabase for auto-hospedado em outro domínio,
+     acrescente-o em connect-src.
+     frame-ancestors não entra aqui: o navegador ignora essa diretiva quando ela
+     vem por <meta>. Ela precisa ser enviada como cabeçalho HTTP pelo servidor
+     (ver a seção de cabeçalhos no README). -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  base-uri 'none';
+  object-src 'none';
+  form-action 'none';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src https://fonts.gstatic.com;
+  img-src 'self' data:;
+  manifest-src 'self';
+  worker-src 'self';
+  connect-src 'self' https://*.supabase.co https://*.supabase.in;
+">
+
 <title>Recebimentos</title>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --navy: #071A33; --navy-2: #0C2445; --navy-3: #123057;
-    --line: #1C3E6B; --ink: #EAF0F8; --gold: #D9A441; --gold-dim: #A97C2C;
-  }
-  body { background: var(--navy); color: var(--ink); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; padding: 20px; }
-  .wrap { max-width: 1180px; margin: 0 auto; }
+<meta name="description" content="Programação e entrada de materiais">
 
-  .topbar { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap; border-bottom:2px solid var(--line); padding-bottom:14px; }
-  .brand h1 { font-family:'Barlow Condensed',sans-serif; font-size:32px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; line-height:1; }
-  .brand p { font-size:12px; color:var(--gold); letter-spacing:.16em; text-transform:uppercase; margin-top:5px; font-weight:500; }
-  .clock { text-align:right; font-family:'Barlow Condensed',sans-serif; }
-  .clock .t { font-size:44px; font-weight:700; line-height:.92; font-variant-numeric:tabular-nums; }
-  .clock .d { font-size:12px; color:var(--gold); text-transform:uppercase; letter-spacing:.14em; font-family:'Inter',sans-serif; }
+<!-- PWA -->
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#071A33">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Recebimento">
+<link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png">
+<link rel="icon" href="./assets/icons/icon-192.png" sizes="192x192">
+<link rel="icon" href="./assets/icons/favicon.svg" type="image/svg+xml">
 
-  .cut { font-size:12px; color:var(--gold); padding:11px 0 16px; }
-  .cut b { color:var(--ink); font-weight:600; }
-
-  .tabs { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
-  .tabs button, .filters button, .acts button, .gridbar button {
-    font-family:'Inter',sans-serif; font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
-    background:transparent; color:var(--gold); border:1px solid var(--line); border-radius:2px; padding:9px 16px; cursor:pointer;
-  }
-  .tabs button:hover { color:var(--ink); border-color:var(--gold-dim); }
-  .tabs button[aria-pressed="true"] { background:var(--gold); color:var(--navy); border-color:var(--gold); }
-  .tabs .spacer { flex:1; }
-  .sync { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold-dim); align-self:center; }
-  .sync.bad { color:#FF7A7A; }
-
-  .filters { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:14px; padding:12px 14px; background:var(--navy-2); border:1px solid var(--line); border-radius:3px; }
-  .filters label { font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--gold-dim); font-weight:600; }
-  .filters select, .filters input { background:var(--navy); border:1px solid var(--line); color:var(--ink); font-family:'Inter',sans-serif; font-size:12px; padding:7px 9px; border-radius:2px; }
-  .filters input { width:130px; }
-  .filters .chips { display:flex; gap:5px; margin-left:auto; }
-  .filters .chips button[aria-pressed="true"] { background:var(--gold); color:var(--navy); border-color:var(--gold); }
-
-  .lane { margin-top:24px; }
-  .lane-head { display:flex; align-items:baseline; gap:12px; font-family:'Barlow Condensed',sans-serif; border-bottom:1px solid var(--line); padding-bottom:6px; margin-bottom:8px; }
-  .lane-head h2 { font-size:20px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
-  .lane-head .n { font-size:16px; color:var(--gold); font-variant-numeric:tabular-nums; font-weight:600; }
-  .lane-head .note { margin-left:auto; font-family:'Inter',sans-serif; font-size:11px; color:var(--gold-dim); }
-
-  .row { display:grid; grid-template-columns:136px 1fr auto auto auto; align-items:center; gap:16px; background:var(--navy-2); border-left:4px solid var(--line); padding:11px 16px; margin-bottom:4px; }
-  .row.click { cursor:pointer; }
-  .row.click:hover { background:var(--navy-3); }
-  .pill { font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; text-align:center; padding:5px 0; border-radius:2px; }
-  .prod { font-size:14px; font-weight:500; }
-  .meta { font-size:12px; color:var(--gold); margin-top:2px; }
-  .meta span { color:var(--gold-dim); }
-  .obs { font-size:12px; color:var(--ink); opacity:.72; margin-top:3px; font-style:italic; }
-  .unid { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); border:1px solid var(--gold-dim); border-radius:2px; padding:2px 9px; }
-  .when { font-family:'Barlow Condensed',sans-serif; font-size:21px; font-variant-numeric:tabular-nums; }
-  .tag { font-size:10px; letter-spacing:.11em; text-transform:uppercase; color:#3DD68C; border:1px solid #235B41; border-radius:2px; padding:3px 7px; }
-  .empty { color:var(--gold-dim); font-size:13px; padding:22px 0; }
-
-  .sheet { position:fixed; inset:0; background:rgba(3,10,20,.86); display:flex; align-items:center; justify-content:center; padding:18px; z-index:40; }
-  .card { background:var(--navy-2); border:1px solid var(--line); width:100%; max-width:560px; padding:22px; max-height:90vh; overflow:auto; border-radius:3px; }
-  .card.wide { max-width:1080px; }
-  .card h3 { font-family:'Barlow Condensed',sans-serif; font-size:23px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
-  .card .sub { font-size:12px; color:var(--gold); margin:3px 0 18px; }
-  .card label { display:block; font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--gold-dim); margin:16px 0 7px; font-weight:600; }
-  .opts { display:flex; gap:6px; flex-wrap:wrap; }
-  .opts button { font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; background:transparent; border:1px solid var(--line); color:var(--gold); padding:8px 14px; cursor:pointer; border-radius:2px; }
-  .fields { display:grid; grid-template-columns:1fr 1fr; gap:0 14px; }
-  .fields .full { grid-column:1/-1; }
-  textarea, input[type=text], input[type=date], input[type=number] { width:100%; background:var(--navy); border:1px solid var(--line); color:var(--ink); font-family:'Inter',sans-serif; font-size:13px; padding:9px; border-radius:2px; resize:vertical; }
-  .acts { display:flex; gap:8px; margin-top:22px; align-items:center; }
-  .acts .go { background:var(--gold); color:var(--navy); border-color:var(--gold); }
-  .acts .del { color:#FF7A7A; border-color:#5A2020; }
-  .acts .spacer { flex:1; }
-  .hint { font-size:12px; color:var(--gold); line-height:1.65; margin-bottom:12px; }
-  .hint b { color:var(--ink); }
-  .status { font-size:12px; color:#3DD68C; margin-top:12px; min-height:16px; }
-  .status.bad { color:#FF7A7A; }
-
-  #gwrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  table.grid { width:100%; border-collapse:collapse; min-width:720px; }
-  table.grid th { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); }
-  table.grid td { padding:0; border:1px solid var(--line); }
-  table.grid input { width:100%; background:transparent; border:0; color:var(--ink); font-size:12px; padding:8px; border-radius:0; }
-  table.grid input:focus { outline:2px solid var(--gold); outline-offset:-2px; background:var(--navy); }
-  .gridbar { display:flex; gap:8px; margin-top:12px; align-items:center; }
-  .gridbar .spacer { flex:1; }
-
-  #login { position:fixed; inset:0; background:var(--navy); z-index:90; display:flex; align-items:center; justify-content:center; padding:20px; }
-  #login .stage { width:100%; max-width:430px; }
-  #login .hazard { height:8px; background:repeating-linear-gradient(135deg, var(--gold) 0 12px, var(--navy-3) 12px 24px); }
-  #login .panel { background:var(--navy-2); border:1px solid var(--line); border-top:0; padding:34px 32px 30px; }
-  #login h1 { font-family:'Barlow Condensed',sans-serif; font-size:52px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; line-height:.92; }
-  #login .tagline { font-size:11px; color:var(--gold); letter-spacing:.19em; text-transform:uppercase; margin-top:8px; font-weight:600; }
-  #login .rule { height:1px; background:var(--line); margin:24px 0; }
-  #login label { display:block; font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--gold-dim); font-weight:600; margin-bottom:9px; }
-  #login input { width:100%; background:var(--navy); border:1px solid var(--line); color:var(--ink); font-family:'Barlow Condensed',sans-serif; font-size:30px; font-weight:600; letter-spacing:.22em; text-align:center; font-variant-numeric:tabular-nums; padding:12px; border-radius:2px; }
-  #login input:focus { outline:none; border-color:var(--gold); }
-  #login button { width:100%; margin-top:14px; background:var(--gold); color:var(--navy); font-family:'Inter',sans-serif; font-size:12px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; border:0; padding:15px; border-radius:2px; cursor:pointer; }
-  #login .err { color:#FF7A7A; font-size:12px; min-height:17px; margin-top:12px; text-align:center; }
-  #login .foot { font-size:10px; color:var(--gold-dim); letter-spacing:.13em; text-transform:uppercase; text-align:center; margin-top:18px; }
-  .who { display:flex; align-items:center; gap:10px; font-size:11px; color:var(--gold); letter-spacing:.1em; text-transform:uppercase; }
-  .who b { color:var(--ink); font-variant-numeric:tabular-nums; letter-spacing:.14em; }
-  .who button { font-size:10px; letter-spacing:.12em; text-transform:uppercase; font-weight:600; background:transparent; border:1px solid var(--line); color:var(--gold-dim); padding:6px 12px; border-radius:2px; cursor:pointer; font-family:'Inter',sans-serif; }
-
-  #setup { max-width:640px; margin:60px auto; background:var(--navy-2); border:1px solid var(--line); padding:28px; }
-  #setup h2 { font-family:'Barlow Condensed',sans-serif; font-size:26px; letter-spacing:.05em; text-transform:uppercase; margin-bottom:10px; }
-  #setup p { font-size:13px; line-height:1.7; color:var(--gold); margin-bottom:10px; }
-  #setup code { background:var(--navy); padding:2px 6px; color:var(--ink); font-size:12px; }
-
-  @media (max-width:760px) {
-    body { padding:12px; -webkit-text-size-adjust:100%; }
-
-    .topbar { align-items:center; padding-bottom:11px; gap:10px; }
-    .brand h1 { font-size:23px; }
-    .brand p { font-size:10px; letter-spacing:.12em; margin-top:3px; }
-    .who { font-size:10px; gap:7px; flex-wrap:wrap; margin-top:7px !important; }
-    .clock .t { font-size:30px; }
-    .clock .d { font-size:10px; letter-spacing:.1em; }
-    .cut { font-size:11px; padding:9px 0 12px; line-height:1.55; }
-
-    .tabs { gap:5px; }
-    .tabs button { padding:9px 12px; font-size:10px; letter-spacing:.07em; flex:1 1 auto; }
-    .tabs .spacer { display:none; }
-    .sync { width:100%; text-align:right; order:9; }
-
-    .filters { gap:6px; padding:10px; }
-    .filters label { width:100%; margin-bottom:-2px; }
-    .filters select, .filters input { flex:1 1 130px; min-width:0; width:auto; }
-    .filters .chips { width:100%; margin-left:0; margin-top:4px; }
-    .filters .chips button { flex:1; padding:9px 4px; }
-
-    .lane { margin-top:18px; }
-    .lane-head h2 { font-size:17px; letter-spacing:.09em; }
-    .lane-head .note { display:none; }
-
-    .row { grid-template-columns:1fr auto; gap:7px 10px; padding:12px 13px; }
-    .row > .pill { grid-column:1; grid-row:1; justify-self:start; padding:5px 12px; font-size:13px; }
-    .row > .when { grid-column:2; grid-row:1; justify-self:end; font-size:18px; }
-    .row > div    { grid-column:1/-1; grid-row:2; }
-    .row > .unid  { grid-column:1; grid-row:3; justify-self:start; font-size:13px; }
-    .row > .tag   { grid-column:2; grid-row:3; justify-self:end; }
-    .prod { font-size:14px; line-height:1.35; }
-    .meta { font-size:11px; line-height:1.45; }
-
-    .sheet { padding:0; align-items:flex-end; }
-    .card, .card.wide { max-width:100%; max-height:94vh; padding:18px 16px 22px; border-radius:10px 10px 0 0; }
-    .card h3 { font-size:20px; }
-    .fields { grid-template-columns:1fr; }
-    .opts button { flex:1 1 auto; padding:11px 12px; }
-    .acts { flex-wrap:wrap; }
-    .acts button { flex:1 1 auto; padding:12px 14px; }
-    .acts .spacer { display:none; }
-    .acts .go { order:-1; width:100%; flex-basis:100%; }
-
-    #login { padding:14px; }
-    #login h1 { font-size:38px; }
-    #login .panel { padding:26px 20px 24px; }
-  }
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="./assets/css/app.css">
 </head>
 <body>
 
-<!-- =========================================================================
-     CONFIGURAÇÃO — preencha os dois valores abaixo e salve.
-       url .. Supabase > Project Settings > Data API > Project URL
-       key .. Supabase > Project Settings > API Keys > Publishable key
-              (comeca com sb_publishable_. NUNCA use a Secret key.)
-     ========================================================================= -->
-<script>
-const CFG = {
-  url: "https://ouqtzaorwyugtckdvzxh.supabase.co",
-  key: "sb_publishable_v7mvBdP1Ew7cN53ZS6MlbA_QjK1-svl"
-};
-</script>
+<!-- Configuração gerada a partir do .env. Ver README. -->
+<script src="./assets/js/config.js"></script>
 
-<div id="setup" style="display:none">
+<!-- ===================================================================== -->
+<!-- Tela de configuração ausente                                          -->
+<!-- ===================================================================== -->
+<div id="setup" hidden>
   <h2>Falta configurar</h2>
-  <p>Abra o arquivo <code>index.html</code> e preencha <code>CFG.url</code> e <code>CFG.key</code> com os dados do projeto no Supabase (Project Settings &rsaquo; API).</p>
-  <p>Depois salve, envie o arquivo de novo ao GitHub e recarregue esta página.</p>
+  <p>O arquivo <code>assets/js/config.js</code> não foi encontrado ou está incompleto. Ele não é escrito à mão: sai do <code>.env</code>.</p>
+  <p>Na raiz do projeto, rode:</p>
+  <pre><code>cp .env.example .env
+# preencha APP_SUPABASE_URL e APP_SUPABASE_PUBLISHABLE_KEY
+node scripts/gerar-config.mjs</code></pre>
+  <p>Depois publique novamente e recarregue esta página.</p>
+  <p id="setup-detalhe" class="detalhe"></p>
 </div>
 
-<div id="login" style="display:none">
+<!-- ===================================================================== -->
+<!-- Login                                                                 -->
+<!-- ===================================================================== -->
+<div id="login" hidden>
   <div class="stage">
     <div class="hazard"></div>
-    <div class="panel">
-      <h1>Recebimentos</h1>
-      <div class="tagline">Programação e entrada de materiais</div>
+    <form class="panel" id="form-login" autocomplete="off">
+      <h1 id="login-titulo">Recebimentos</h1>
+      <div class="tagline" id="login-sub">Programação e entrada de materiais</div>
       <div class="rule"></div>
+
       <label for="mat">Matrícula</label>
-      <input id="mat" type="text" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="0000000">
-      <button id="entrar">Entrar</button>
-      <div class="err" id="err"></div>
-      <div class="foot">Acesso conforme perfil da matrícula</div>
-    </div>
+      <input id="mat" name="mat" type="text" inputmode="numeric" pattern="[0-9]*"
+             autocomplete="off" maxlength="10" placeholder="0000000" enterkeyhint="next">
+
+      <label for="senha" class="opcional">Senha</label>
+      <input id="senha" name="senha" type="password" autocomplete="current-password"
+             maxlength="64" placeholder="••••••" enterkeyhint="go">
+
+      <button type="submit" id="entrar">Entrar</button>
+      <div class="err" id="err" role="alert" aria-live="polite"></div>
+      <div class="foot">Primeiro acesso: senha 123456 — o sistema pede a troca</div>
+    </form>
     <div class="hazard"></div>
   </div>
 </div>
 
-<div class="wrap" id="app" style="display:none">
+<!-- ===================================================================== -->
+<!-- Painel                                                                -->
+<!-- ===================================================================== -->
+<div class="wrap" id="app" hidden>
   <div class="topbar">
     <div class="brand">
-      <h1>Recebimento</h1>
+      <h1 id="app-titulo">Recebimento</h1>
       <p id="roleline">Almoxarifado</p>
-      <div class="who" style="margin-top:9px">Matrícula <b id="who-mat">—</b> · <span id="who-perf">—</span> <button id="sair">Sair</button></div>
+      <div class="who">
+        Matrícula <b id="who-mat">—</b> · <span id="who-perf">—</span>
+        <button type="button" id="btn-senha">Trocar senha</button>
+        <button type="button" id="sair">Sair</button>
+      </div>
     </div>
     <div class="clock">
       <div class="t" id="clk">--:--</div>
       <div class="d" id="dt">—</div>
     </div>
   </div>
+
   <div class="cut" id="cut"></div>
 
   <div class="tabs" id="tabs">
-    <button data-r="compras">Compras</button>
-    <button data-r="almox" aria-pressed="true">Almoxarifado</button>
-    <button data-r="fiscal">Fiscal</button>
-    <button data-r="hist">Histórico</button>
+    <button type="button" data-r="compras">Compras</button>
+    <button type="button" data-r="almox" aria-pressed="true">Almoxarifado</button>
+    <button type="button" data-r="fiscal">Fiscal</button>
+    <button type="button" data-r="hist">Histórico</button>
+    <button type="button" data-r="usuarios">Usuários</button>
     <span class="spacer"></span>
-    <span class="sync" id="sync"></span>
-    <button id="btn-add">Inserir programação</button>
-    <button id="btn-exp">Exportar</button>
+    <span class="sync" id="sync" aria-live="polite"></span>
+    <button type="button" id="btn-add" hidden>Inserir programação</button>
+    <button type="button" id="btn-exp">Exportar</button>
+    <button type="button" id="btn-instalar" hidden>Instalar app</button>
   </div>
 
   <div id="filters"></div>
   <div id="board"><div class="empty">Carregando…</div></div>
 </div>
 
-<script>
-/* ===========================================================================
-   ACESSO AO BANCO — todo o tráfego com o banco passa por aqui.
-   Para trocar de banco, só este bloco muda.
-   =========================================================================== */
-const DB = {
-  base(){ return CFG.url.replace(/\/+$/,'').replace(/\/rest\/v1$/,'') + '/rest/v1/'; },
-  head(extra){
-    return Object.assign({
-      'apikey': CFG.key,
-      'Authorization': 'Bearer ' + CFG.key,
-      'Content-Type': 'application/json'
-    }, extra || {});
-  },
-  async req(path, opts){
-    opts = opts || {};
-    const r = await fetch(this.base() + path, {
-      method: opts.method || 'GET',
-      headers: this.head(opts.headers),
-      body: opts.body ? JSON.stringify(opts.body) : undefined
-    });
-    if (!r.ok) throw new Error('HTTP ' + r.status + ' — ' + (await r.text()));
-    const t = await r.text();
-    return t ? JSON.parse(t) : null;
-  },
-  listar(){ return this.req('programacao?select=*&order=data_entrega.asc,id.asc'); },
-  inserir(linhas){ return this.req('programacao', {method:'POST', headers:{'Prefer':'return=representation'}, body:linhas}); },
-  atualizar(id, campos){ return this.req('programacao?id=eq.'+id, {method:'PATCH', headers:{'Prefer':'return=representation'}, body:campos}); },
-  excluir(id){ return this.req('programacao?id=eq.'+id, {method:'DELETE'}); }
-};
+<!-- ===================================================================== -->
+<!-- Avisos flutuantes do PWA                                              -->
+<!-- ===================================================================== -->
+<div id="aviso-offline" class="aviso off" hidden role="status">
+  <span id="aviso-offline-txt">Sem conexão — mostrando os dados salvos no aparelho.</span>
+</div>
 
-/* =========================================================================== */
-const FERIADOS = ['2026-01-01','2026-02-16','2026-02-17','2026-04-03','2026-04-21','2026-05-01','2026-06-04','2026-09-07','2026-10-12','2026-11-02','2026-11-15','2026-11-20','2026-12-25','2027-01-01'];
-const COR = {
-  'ATRASADO':        ['#FF5A5A','#3B1218'],
-  'ATRASANDO':       ['#FFB020','#3A2A0A'],
-  'DENTRO DO PRAZO': ['#3DD68C','#0C3326'],
-  'FINALIZADO':      ['#56A8FF','#0D2A4C'],
-  'ENTREGA PARCIAL': ['#B79BFF','#241E44'],
-  'CANCELADO':       ['#7A8CA3','#16283F']
-};
-const RANK = {'ATRASADO':1,'FINALIZADO':2,'ATRASANDO':3,'DENTRO DO PRAZO':4,'ENTREGA PARCIAL':5,'CANCELADO':6};
-const NOME = {compras:'Compras', almox:'Almoxarifado', fiscal:'Fiscal', hist:'Histórico'};
-const MATRICULAS = { '4000552':'master', '4000455':'compras', '4000884':'compras', '4000900':'compras' };
-const ROTULO = {master:'Acesso total', compras:'Perfil Compras', operador:'Almoxarifado / Consulta'};
-const ABAS = { master:['compras','almox','fiscal','hist'], compras:['compras','almox','fiscal','hist'], operador:['almox','fiscal','hist'] };
-const CAMPOS = [
-  ['codigo','Código'],['produto','Produto'],['fornecedor','Fornecedor'],['cnpj','CNPJ'],
-  ['volume','Volume'],['data_entrega','Data de entrega'],['ordem_compra','OC'],['unidade','Unidade']
-];
+<div id="aviso-update" class="aviso up" hidden role="status">
+  <span>Nova versão disponível.</span>
+  <button type="button" id="btn-update">Atualizar</button>
+  <button type="button" id="btn-update-depois" class="ghost" aria-label="Dispensar">✕</button>
+</div>
 
-let dados = [], papel = 'almox', filtro = {}, perfil = null, matricula = '', assinatura = '';
-
-const zz  = n => String(n).padStart(2,'0');
-const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const hoje0 = () => { const a=new Date(); return new Date(a.getFullYear(),a.getMonth(),a.getDate()); };
-const iso = d => d.getFullYear()+'-'+zz(d.getMonth()+1)+'-'+zz(d.getDate());
-const podeCompras = () => perfil === 'master' || perfil === 'compras';
-const podeEditarTudo = () => perfil === 'master' || (perfil === 'compras' && papel === 'compras');
-
-function dataPrevista(str){
-  const p = String(str||'').slice(0,10).split('-').map(Number);
-  const dt = new Date(p[0], p[1]-1, p[2]);
-  while (dt.getDay() === 0 || FERIADOS.indexOf(iso(dt)) >= 0) dt.setDate(dt.getDate()+1);
-  return dt;
-}
-function situacao(it, agora){
-  if (it.status_entrega && it.status_entrega !== 'PENDENTE') return it.status_entrega;
-  const prev = dataPrevista(it.data_entrega), h = hoje0();
-  if (prev > h) return 'DENTRO DO PRAZO';
-  if (prev < h) return 'ATRASADO';
-  const mins = agora.getHours()*60 + agora.getMinutes();
-  const sab = prev.getDay() === 6;
-  const l1 = sab ? 600 : 840, l2 = sab ? 690 : 950;
-  return mins < l1 ? 'DENTRO DO PRAZO' : (mins < l2 ? 'ATRASANDO' : 'ATRASADO');
-}
-function faixa(it){
-  if (it.status_entrega && it.status_entrega !== 'PENDENTE') return 'encerrados';
-  const dias = Math.round((dataPrevista(it.data_entrega) - hoje0()) / 86400000);
-  if (dias < 0) return 'atrasados';
-  if (dias === 0) return 'hoje';
-  if (dias === 1) return 'amanha';
-  if (dias <= 7) return 'semana';
-  return 'adiante';
-}
-
-function marcaSync(txt, ruim){
-  const el = document.getElementById('sync');
-  el.textContent = txt || '';
-  el.className = 'sync' + (ruim ? ' bad' : '');
-}
-async function carregar(silencioso){
-  try {
-    const novo = await DB.listar();
-    const a = JSON.stringify(novo);
-    if (a !== assinatura){ assinatura = a; dados = novo; pintar(); }
-    marcaSync('atualizado ' + zz(new Date().getHours()) + ':' + zz(new Date().getMinutes()));
-  } catch(e){
-    console.error(e);
-    marcaSync('sem conexão com o banco', true);
-    if (!silencioso) document.getElementById('board').innerHTML = '<div class="empty">Não foi possível ler o banco. Confira a configuração e a conexão.</div>';
-  }
-}
-
-function relogio(){
-  const a = new Date();
-  document.getElementById('clk').textContent = zz(a.getHours())+':'+zz(a.getMinutes());
-  document.getElementById('dt').textContent = a.toLocaleDateString('pt-BR',{weekday:'long', day:'2-digit', month:'long'});
-  const sab = a.getDay() === 6;
-  const l1 = sab ? 600 : 840, l2 = sab ? 690 : 950;
-  const mins = a.getHours()*60 + a.getMinutes();
-  const hh = m => zz(Math.floor(m/60))+':'+zz(m%60);
-  const falta = m => { const x = m - mins; return x <= 0 ? null : Math.floor(x/60)+'h'+zz(x%60); };
-  let t = 'Corte de hoje: <b>'+hh(l1)+'</b> começa a atrasar · <b>'+hh(l2)+'</b> conta como atrasado.';
-  const f1 = falta(l1), f2 = falta(l2);
-  if (f1) t += ' Faltam <b>'+f1+'</b> para o primeiro corte.';
-  else if (f2) t += ' Faltam <b>'+f2+'</b> para o segundo corte.';
-  else t += ' Os dois cortes já passaram.';
-  if (sab) t += ' (sábado: janela 07:00–11:30)';
-  document.getElementById('cut').innerHTML = t;
-}
-
-function unicos(campo){
-  const s = {};
-  dados.forEach(d => { const v = (d[campo]||'').trim(); if (v) s[v] = 1; });
-  return Object.keys(s).sort();
-}
-function barraFiltros(){
-  const box = document.getElementById('filters');
-  if (papel === 'compras'){ box.className=''; box.innerHTML = ''; return; }
-  const sel = (k, campo, rot) => '<label>'+rot+'</label><select data-f="'+k+'"><option value="">Todos</option>'
-    + unicos(campo).map(v => '<option'+(filtro[k]===v?' selected':'')+'>'+esc(v)+'</option>').join('') + '</select>';
-  const txt = (k, rot) => '<label>'+rot+'</label><input data-f="'+k+'" type="text" placeholder="filtrar" value="'+esc(filtro[k]||'')+'">';
-  let h = '';
-  if (papel === 'almox') h = sel('unidade','unidade','Unidade') + sel('fornecedor','fornecedor','Fornecedor') + txt('produto','Produto') + txt('ordem_compra','OC');
-  if (papel === 'fiscal') h = sel('fornecedor','fornecedor','Fornecedor') + txt('cnpj','CNPJ') + txt('ordem_compra','OC') + sel('unidade','unidade','Unidade');
-  if (papel === 'hist')  h = sel('unidade','unidade','Unidade') + sel('fornecedor','fornecedor','Fornecedor') + txt('produto','Produto') + txt('ordem_compra','OC');
-  if (papel !== 'hist'){
-    h += '<span class="chips">' + ['tudo','hoje','semana'].map(p =>
-      '<button data-p="'+p+'" aria-pressed="'+((filtro.periodo||'tudo')===p)+'">'+({tudo:'Tudo',hoje:'Hoje',semana:'Esta semana'}[p])+'</button>').join('') + '</span>';
-  }
-  box.className = 'filters'; box.innerHTML = h;
-  box.querySelectorAll('[data-f]').forEach(el => {
-    el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => { filtro[el.dataset.f] = el.value; pintar(true); });
-  });
-  box.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { filtro.periodo = b.dataset.p; pintar(); });
-}
-function passa(it){
-  const c = (k, campo) => !filtro[k] || String(it[campo]||'').toLowerCase().indexOf(filtro[k].toLowerCase()) >= 0;
-  if (!c('unidade','unidade') || !c('fornecedor','fornecedor') || !c('produto','produto') || !c('ordem_compra','ordem_compra') || !c('cnpj','cnpj')) return false;
-  const p = filtro.periodo || 'tudo';
-  if (p === 'tudo' || papel === 'hist') return true;
-  const dias = Math.round((dataPrevista(it.data_entrega) - hoje0()) / 86400000);
-  if (p === 'hoje') return dias <= 0;
-  if (p === 'semana') return dias <= 7;
-  return true;
-}
-
-function linha(it, agora){
-  const sit = situacao(it, agora);
-  const c = COR[sit] || COR['CANCELADO'];
-  const d = String(it.data_entrega||'').slice(0,10).split('-');
-  const editavel = papel === 'compras' ? podeCompras() : (papel === 'almox');
-  return '<div class="row '+(editavel?'click':'')+'" data-id="'+it.id+'" style="border-left-color:'+c[0]+'">'
-    + '<span class="pill" style="color:'+c[0]+';background:'+c[1]+'">'+sit+'</span>'
-    + '<div><div class="prod">'+esc(it.produto || it.codigo)+'</div>'
-    + '<div class="meta">'+esc(it.fornecedor)+(it.ordem_compra?' <span>·</span> OC '+esc(it.ordem_compra):'')+(it.cnpj?' <span>·</span> '+esc(it.cnpj):'')+'</div>'
-    + (it.observacoes ? '<div class="obs">'+esc(it.observacoes)+'</div>' : '') + '</div>'
-    + (it.unidade ? '<span class="unid">'+esc(it.unidade)+'</span>' : '<span></span>')
-    + '<span class="when" style="color:'+c[0]+'">'+(d[2]||'--')+'/'+(d[1]||'--')+'</span>'
-    + (it.descarga === 'SIM' ? '<span class="tag">Descarregado</span>' : '<span></span>')
-    + '</div>';
-}
-
-function pintar(soBoard){
-  relogio();
-  document.getElementById('roleline').textContent = NOME[papel];
-  document.getElementById('btn-add').style.display = (papel === 'compras' && podeCompras()) ? '' : 'none';
-  if (!soBoard) barraFiltros();
-  const agora = new Date();
-  const board = document.getElementById('board');
-
-  if (papel === 'hist'){
-    const lista = dados.filter(passa).filter(it => it.status_entrega !== 'PENDENTE' || dataPrevista(it.data_entrega) < hoje0())
-      .sort((x,y) => String(y.data_entrega).localeCompare(String(x.data_entrega)));
-    board.innerHTML = lista.length
-      ? '<div class="lane"><div class="lane-head"><h2>Histórico</h2><span class="n">'+lista.length+'</span><span class="note">encerrados e vencidos</span></div>'
-        + lista.map(it => linha(it, agora)).join('') + '</div>'
-      : '<div class="empty">Nada no histórico ainda.</div>';
-    ligarCliques();
-    return;
-  }
-
-  const visiveis = dados.filter(passa);
-  if (!visiveis.length){
-    board.innerHTML = '<div class="empty">'+(dados.length ? 'Nenhum item com esses filtros.' : 'Nenhuma programação lançada. Vá em Compras e clique em “Inserir programação”.')+'</div>';
-    return;
-  }
-  const ordem = ['atrasados','hoje','amanha','semana','adiante','encerrados'];
-  const titulo = {atrasados:'Atrasados', hoje:'Hoje', amanha:'Amanhã', semana:'Esta semana', adiante:'Mais adiante', encerrados:'Encerrados'};
-  const nota = {atrasados:'não chegaram na data prevista', hoje:'janela de recebimento aberta', amanha:'', semana:'próximos 7 dias', adiante:'', encerrados:'finalizados, parciais e cancelados'};
-  const g = {}; ordem.forEach(k => g[k] = []);
-  visiveis.forEach(it => g[faixa(it)].push(it));
-  let html = '';
-  ordem.forEach(k => {
-    if (!g[k].length) return;
-    g[k].sort((x,y) => (RANK[situacao(x,agora)] - RANK[situacao(y,agora)]) || String(x.data_entrega).localeCompare(String(y.data_entrega)));
-    html += '<div class="lane"><div class="lane-head"><h2>'+titulo[k]+'</h2><span class="n">'+g[k].length+'</span>'
-         + (nota[k] ? '<span class="note">'+nota[k]+'</span>' : '') + '</div>'
-         + g[k].map(it => linha(it, agora)).join('') + '</div>';
-  });
-  board.innerHTML = html;
-  ligarCliques();
-}
-function ligarCliques(){
-  document.querySelectorAll('#board .row.click').forEach(el => el.onclick = () => abrir(+el.dataset.id));
-}
-
-function abrir(id){
-  const it = dados.filter(x => x.id === id)[0];
-  if (!it) return;
-  const podeTudo = podeEditarTudo();
-  const opcoes = ['PENDENTE','FINALIZADO','ENTREGA PARCIAL','CANCELADO'];
-  const atual = it.status_entrega || 'PENDENTE';
-  const sheet = document.createElement('div');
-  sheet.className = 'sheet';
-  let campos = '';
-  if (podeTudo){
-    campos = '<label class="full">Dados da programação</label><div class="fields">'
-      + CAMPOS.map(c => '<div'+(c[0]==='produto'?' class="full"':'')+'><label>'+c[1]+'</label>'
-        + (c[0]==='data_entrega' ? '<input type="date" id="f-'+c[0]+'" value="'+esc(String(it.data_entrega||'').slice(0,10))+'">'
-          : c[0]==='volume' ? '<input type="number" id="f-'+c[0]+'" value="'+esc(it.volume==null?'':it.volume)+'">'
-          : '<input type="text" id="f-'+c[0]+'" value="'+esc(it[c[0]])+'">') + '</div>').join('')
-      + '</div>';
-  }
-  sheet.innerHTML = '<div class="card">'
-    + '<h3>'+esc(it.produto || it.codigo)+'</h3>'
-    + '<div class="sub">'+esc(it.fornecedor)+(it.ordem_compra?' · OC '+esc(it.ordem_compra):'')+(it.unidade?' · '+esc(it.unidade):'')+'</div>'
-    + campos
-    + '<label>Status da entrega</label><div class="opts" id="op-st">'+opcoes.map(o => '<button data-v="'+o+'">'+o+'</button>').join('')+'</div>'
-    + '<label>Descarga realizada</label><div class="opts" id="op-dc">'+['SIM','NAO'].map(o => '<button data-v="'+o+'">'+o+'</button>').join('')+'</div>'
-    + '<label>Observações</label><textarea id="f-obs" rows="3">'+esc(it.observacoes||'')+'</textarea>'
-    + '<div class="status" id="st"></div>'
-    + '<div class="acts">'+(podeTudo?'<button class="del" id="rm">Excluir</button>':'')+'<button id="x">Cancelar</button><span class="spacer"></span><button class="go" id="ok">Salvar</button></div>'
-    + '</div>';
-  document.body.appendChild(sheet);
-
-  let st = atual, dc = it.descarga || 'NAO';
-  const corSt = v => COR[v === 'PENDENTE' ? 'DENTRO DO PRAZO' : v][0];
-  const marca = (grupo, val, cor) => sheet.querySelectorAll(grupo+' button').forEach(b => {
-    const on = b.dataset.v === val;
-    b.setAttribute('aria-pressed', on);
-    b.style.cssText = on ? 'background:'+cor(b.dataset.v)+';border-color:transparent;color:#071A33;' : '';
-  });
-  marca('#op-st', st, corSt); marca('#op-dc', dc, () => '#D9A441');
-  sheet.querySelectorAll('#op-st button').forEach(b => b.onclick = () => { st = b.dataset.v; marca('#op-st', st, corSt); });
-  sheet.querySelectorAll('#op-dc button').forEach(b => b.onclick = () => { dc = b.dataset.v; marca('#op-dc', dc, () => '#D9A441'); });
-  sheet.querySelector('#x').onclick = () => sheet.remove();
-  sheet.onclick = e => { if (e.target === sheet) sheet.remove(); };
-
-  if (podeTudo) sheet.querySelector('#rm').onclick = async () => {
-    if (!confirm('Excluir esta programação?')) return;
-    try { await DB.excluir(id); sheet.remove(); await carregar(); }
-    catch(e){ const s = sheet.querySelector('#st'); s.className='status bad'; s.textContent = 'Não foi possível excluir.'; }
-  };
-  sheet.querySelector('#ok').onclick = async () => {
-    const s = sheet.querySelector('#st');
-    const campos = { status_entrega: st, descarga: dc, observacoes: sheet.querySelector('#f-obs').value.trim(), alterado_por: matricula };
-    if (podeTudo) CAMPOS.forEach(c => {
-      const v = sheet.querySelector('#f-'+c[0]).value.trim();
-      campos[c[0]] = c[0] === 'volume' ? (v === '' ? null : Number(v)) : v;
-    });
-    s.className = 'status'; s.textContent = 'Salvando…';
-    try { await DB.atualizar(id, campos); sheet.remove(); await carregar(); }
-    catch(e){ console.error(e); s.className='status bad'; s.textContent = 'Não foi possível salvar. Tente de novo.'; }
-  };
-}
-
-function normData(s){
-  s = String(s||'').trim();
-  let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (m) return m[3]+'-'+zz(+m[2])+'-'+zz(+m[1]);
-  m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-  if (m) return m[1]+'-'+zz(+m[2])+'-'+zz(+m[3]);
-  return '';
-}
-
-function inserir(){
-  let linhas = 5;
-  const sheet = document.createElement('div');
-  sheet.className = 'sheet';
-  sheet.innerHTML = '<div class="card wide">'
-    + '<h3>Inserir programação</h3>'
-    + '<div class="sub">Digite ou cole direto do Excel — a colagem se espalha a partir da célula selecionada</div>'
-    + '<div class="hint">Ordem das colunas: <b>Código · Produto · Fornecedor · CNPJ · Volume · Data de entrega · OC · Unidade</b>. A data aceita <b>10/09/2026</b> ou <b>2026-09-10</b>.</div>'
-    + '<div id="gwrap"></div>'
-    + '<div class="gridbar"><button id="mais">+ mais 5 linhas</button><span class="spacer"></span><span class="status" id="st"></span></div>'
-    + '<div class="acts"><button id="x">Cancelar</button><span class="spacer"></span><button class="go" id="ok">Inserir</button></div>'
-    + '</div>';
-  document.body.appendChild(sheet);
-
-  const desenha = () => {
-    const antes = Array.prototype.map.call(sheet.querySelectorAll('#gwrap input'), i => i.value);
-    sheet.querySelector('#gwrap').innerHTML = '<table class="grid"><thead><tr>'
-      + CAMPOS.map(c => '<th>'+c[1]+'</th>').join('') + '</tr></thead><tbody>'
-      + Array.from({length:linhas}, (_,r) => '<tr>' + CAMPOS.map((c,k) => '<td><input type="text" data-r="'+r+'" data-c="'+k+'"></td>').join('') + '</tr>').join('')
-      + '</tbody></table>';
-    sheet.querySelectorAll('#gwrap input').forEach((el,n) => { if (antes[n] !== undefined) el.value = antes[n]; });
-    sheet.querySelectorAll('#gwrap input').forEach(el => el.addEventListener('paste', colar));
-  };
-  const colar = e => {
-    const txt = (e.clipboardData || window.clipboardData).getData('text');
-    if (txt.indexOf('\t') < 0 && txt.indexOf('\n') < 0) return;
-    e.preventDefault();
-    const r0 = +e.target.dataset.r, c0 = +e.target.dataset.c;
-    const mat = txt.replace(/\r/g,'').split('\n').filter(l => l.length).map(l => l.split('\t'));
-    if (r0 + mat.length > linhas){ linhas = r0 + mat.length; desenha(); }
-    mat.forEach((row, ri) => row.forEach((val, ci) => {
-      const alvo = sheet.querySelector('#gwrap input[data-r="'+(r0+ri)+'"][data-c="'+(c0+ci)+'"]');
-      if (alvo) alvo.value = String(val).trim();
-    }));
-  };
-  desenha();
-  sheet.querySelector('#mais').onclick = () => { linhas += 5; desenha(); };
-  sheet.querySelector('#x').onclick = () => sheet.remove();
-  sheet.onclick = e => { if (e.target === sheet) sheet.remove(); };
-  sheet.querySelector('#ok').onclick = async () => {
-    const s = sheet.querySelector('#st');
-    const novos = [], ruins = [];
-    for (let r = 0; r < linhas; r++){
-      const v = CAMPOS.map((c,k) => (sheet.querySelector('#gwrap input[data-r="'+r+'"][data-c="'+k+'"]').value || '').trim());
-      if (v.every(x => !x)) continue;
-      const data = normData(v[5]);
-      if (!data || (!v[0] && !v[1])){ ruins.push(r+1); continue; }
-      novos.push({
-        codigo:v[0], produto:v[1], fornecedor:v[2], cnpj:v[3],
-        volume: v[4] === '' ? null : Number(String(v[4]).replace(/\./g,'').replace(',','.')) || null,
-        data_entrega:data, ordem_compra:v[6], unidade:v[7],
-        status_entrega:'PENDENTE', descarga:'NAO', alterado_por: matricula
-      });
-    }
-    if (!novos.length){ s.className='status bad'; s.textContent='Nenhuma linha válida — confira código/produto e a data.'; return; }
-    s.className='status'; s.textContent = 'Gravando '+novos.length+' linha(s)…';
-    try {
-      await DB.inserir(novos);
-      sheet.remove();
-      await carregar();
-    } catch(e){
-      console.error(e);
-      s.className='status bad'; s.textContent = 'Não foi possível gravar. Tente de novo.';
-    }
-  };
-}
-
-function exportar(){
-  const agora = new Date();
-  const cab = ['Codigo','Produto','Fornecedor','CNPJ','Volume','DataEntrega','OrdemCompra','Unidade','Situacao','Status','Descarga','Observacoes','AlteradoPor','AlteradoEm'];
-  const fonte = (papel === 'hist' ? dados.filter(it => it.status_entrega !== 'PENDENTE' || dataPrevista(it.data_entrega) < hoje0()) : dados).filter(passa);
-  const linhas = fonte.map(it => {
-    const d = String(it.data_entrega||'').slice(0,10).split('-');
-    return [it.codigo, it.produto, it.fornecedor, it.cnpj, it.volume, (d[2]||'')+'/'+(d[1]||'')+'/'+(d[0]||''),
-            it.ordem_compra, it.unidade, situacao(it, agora), it.status_entrega, it.descarga, it.observacoes,
-            it.alterado_por, it.alterado_em ? new Date(it.alterado_em).toLocaleString('pt-BR') : ''];
-  });
-  const csv = '\ufeff' + [cab].concat(linhas).map(r => r.map(v => '"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(';')).join('\r\n');
-  const url = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
-  const a = document.createElement('a');
-  a.href = url; a.download = 'recebimento-'+iso(new Date())+'.csv'; a.click();
-  URL.revokeObjectURL(url);
-}
-
-function entrar(){
-  const el = document.getElementById('mat'), err = document.getElementById('err');
-  const m = (el.value || '').replace(/\D/g,'');
-  if (m.length < 6){ err.textContent = 'Informe a matrícula completa.'; el.focus(); return; }
-  matricula = m;
-  perfil = MATRICULAS[m] || 'operador';
-  const abas = ABAS[perfil];
-  papel = abas.indexOf('almox') >= 0 ? 'almox' : abas[0];
-  document.querySelectorAll('#tabs button[data-r]').forEach(b => {
-    b.style.display = abas.indexOf(b.dataset.r) >= 0 ? '' : 'none';
-    b.setAttribute('aria-pressed', b.dataset.r === papel);
-  });
-  document.getElementById('who-mat').textContent = matricula;
-  document.getElementById('who-perf').textContent = ROTULO[perfil];
-  document.getElementById('login').style.display = 'none';
-  document.getElementById('app').style.display = '';
-  filtro = {}; assinatura = '';
-  carregar();
-}
-function sair(){
-  perfil = null; matricula = ''; dados = []; filtro = {}; assinatura = '';
-  document.getElementById('mat').value = '';
-  document.getElementById('err').textContent = '';
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('login').style.display = 'flex';
-  document.getElementById('mat').focus();
-}
-
-document.getElementById('tabs').addEventListener('click', e => {
-  const b = e.target.closest('button[data-r]');
-  if (!b) return;
-  papel = b.dataset.r; filtro = {};
-  document.querySelectorAll('#tabs button[data-r]').forEach(x => x.setAttribute('aria-pressed', x.dataset.r === papel));
-  pintar();
-});
-document.getElementById('btn-add').onclick = inserir;
-document.getElementById('btn-exp').onclick = exportar;
-document.getElementById('btn-add').style.display = 'none';
-document.getElementById('entrar').onclick = entrar;
-document.getElementById('mat').addEventListener('keydown', e => { if (e.key === 'Enter') entrar(); });
-document.getElementById('mat').addEventListener('input', () => { document.getElementById('err').textContent = ''; });
-document.getElementById('sair').onclick = sair;
-
-if (!CFG.url || CFG.url.indexOf('COLE_AQUI') === 0 || !CFG.key || CFG.key.indexOf('COLE_AQUI') === 0){
-  document.getElementById('setup').style.display = '';
-} else {
-  document.getElementById('login').style.display = 'flex';
-  document.getElementById('mat').focus();
-  setInterval(() => { if (perfil){ relogio(); pintar(true); } }, 30000);
-  setInterval(() => { if (perfil) carregar(true); }, 15000);
-}
-</script>
+<script type="module" src="./assets/js/app.js"></script>
 </body>
 </html>

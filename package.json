@@ -1,0 +1,17 @@
+{
+  "name": "painel-recebimento",
+  "version": "1.0.0",
+  "description": "Painel de programação e entrada de materiais do almoxarifado (PWA).",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "config": "node scripts/gerar-config.mjs",
+    "config:check": "node scripts/gerar-config.mjs --check",
+    "icones": "python3 scripts/gerar-icones.py",
+    "dev": "node scripts/gerar-config.mjs && npx --yes http-server . -p 8080 -c-1",
+    "start": "npm run dev"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,379 @@
+/* ===========================================================================
+ * PAINEL DE RECEBIMENTO — folha de estilo única
+ * ---------------------------------------------------------------------------
+ * Ordem do arquivo:
+ *   1. Base e tokens
+ *   2. Cabeçalho e abas
+ *   3. Filtros
+ *   4. Quadro (faixas e linhas)
+ *   5. Modais (detalhe e grade de inserção)
+ *   6. Login e tela de configuração
+ *   7. Avisos do PWA
+ *   8. Responsivo
+ * ======================================================================== */
+
+/* ---------------------------------------------------------------- 1. Base */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy: #071A33;
+  --navy-2: #0C2445;
+  --navy-3: #123057;
+  --line: #1C3E6B;
+  --ink: #EAF0F8;
+  --gold: #D9A441;
+  --gold-dim: #A97C2C;
+  --verde: #3DD68C;
+  --vermelho: #FF7A7A;
+  color-scheme: dark;
+}
+
+[hidden] { display: none !important; }
+
+body {
+  background: var(--navy);
+  color: var(--ink);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  padding: 20px;
+  padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  overscroll-behavior-y: contain;
+}
+
+.wrap { max-width: 1180px; margin: 0 auto; }
+
+:where(button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------- 2. Cabeçalho e abas */
+.topbar {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 20px; flex-wrap: wrap;
+  border-bottom: 2px solid var(--line); padding-bottom: 14px;
+}
+.brand h1 {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 32px; font-weight: 700;
+  letter-spacing: .05em; text-transform: uppercase; line-height: 1;
+}
+.brand p {
+  font-size: 12px; color: var(--gold); letter-spacing: .16em;
+  text-transform: uppercase; margin-top: 5px; font-weight: 500;
+}
+.clock { text-align: right; font-family: 'Barlow Condensed', sans-serif; }
+.clock .t { font-size: 44px; font-weight: 700; line-height: .92; font-variant-numeric: tabular-nums; }
+.clock .d {
+  font-size: 12px; color: var(--gold); text-transform: uppercase;
+  letter-spacing: .14em; font-family: 'Inter', sans-serif;
+}
+
+.who {
+  display: flex; align-items: center; gap: 10px; margin-top: 9px;
+  font-size: 11px; color: var(--gold); letter-spacing: .1em; text-transform: uppercase;
+}
+.who b { color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: .14em; }
+.who button {
+  font-family: 'Inter', sans-serif; font-size: 10px; letter-spacing: .12em;
+  text-transform: uppercase; font-weight: 600; background: transparent;
+  border: 1px solid var(--line); color: var(--gold-dim);
+  padding: 6px 12px; border-radius: 2px; cursor: pointer;
+}
+.who button:hover { color: var(--ink); border-color: var(--gold-dim); }
+
+.cut { font-size: 12px; color: var(--gold); padding: 11px 0 16px; }
+.cut b { color: var(--ink); font-weight: 600; }
+
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.tabs button,
+.filters button,
+.acts button,
+.gridbar button {
+  font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; background: transparent;
+  color: var(--gold); border: 1px solid var(--line); border-radius: 2px;
+  padding: 9px 16px; cursor: pointer;
+}
+.tabs button:hover { color: var(--ink); border-color: var(--gold-dim); }
+.tabs button[aria-pressed="true"] { background: var(--gold); color: var(--navy); border-color: var(--gold); }
+.tabs .spacer { flex: 1; }
+
+.sync {
+  font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--gold-dim); align-self: center;
+}
+.sync.bad { color: var(--vermelho); }
+.sync.cache { color: var(--gold); }
+
+/* ------------------------------------------------------------ 3. Filtros */
+.filters {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  margin-top: 14px; padding: 12px 14px; background: var(--navy-2);
+  border: 1px solid var(--line); border-radius: 3px;
+}
+.filters label {
+  font-size: 10px; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--gold-dim); font-weight: 600;
+}
+.filters select,
+.filters input {
+  background: var(--navy); border: 1px solid var(--line); color: var(--ink);
+  font-family: 'Inter', sans-serif; font-size: 12px; padding: 7px 9px; border-radius: 2px;
+}
+/* Especificidade proposital: a regra geral de input (seção 5, para os modais)
+   vem depois no arquivo e, sem isto, esticaria os filtros para 100%. */
+.filters input[type=text] { width: 130px; flex: 0 1 130px; }
+.filters .chips { display: flex; gap: 5px; margin-left: auto; }
+.filters .chips button[aria-pressed="true"] { background: var(--gold); color: var(--navy); border-color: var(--gold); }
+
+/* -------------------------------------------------------------- 4. Quadro */
+.lane { margin-top: 24px; }
+.lane-head {
+  display: flex; align-items: baseline; gap: 12px;
+  font-family: 'Barlow Condensed', sans-serif;
+  border-bottom: 1px solid var(--line); padding-bottom: 6px; margin-bottom: 8px;
+}
+.lane-head h2 { font-size: 20px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.lane-head .n { font-size: 16px; color: var(--gold); font-variant-numeric: tabular-nums; font-weight: 600; }
+.lane-head .note { margin-left: auto; font-family: 'Inter', sans-serif; font-size: 11px; color: var(--gold-dim); }
+
+.row {
+  display: grid; grid-template-columns: 136px 1fr auto auto auto;
+  align-items: center; gap: 16px;
+  background: var(--navy-2); border-left: 4px solid var(--line);
+  padding: 11px 16px; margin-bottom: 4px;
+}
+.row.click { cursor: pointer; }
+.row.click:hover { background: var(--navy-3); }
+.row.click:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+
+.pill {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; text-align: center;
+  padding: 5px 0; border-radius: 2px;
+}
+.prod { font-size: 14px; font-weight: 500; }
+.meta { font-size: 12px; color: var(--gold); margin-top: 2px; }
+.meta span { color: var(--gold-dim); }
+.obs { font-size: 12px; color: var(--ink); opacity: .72; margin-top: 3px; font-style: italic; }
+.unid {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--gold);
+  border: 1px solid var(--gold-dim); border-radius: 2px; padding: 2px 9px;
+}
+.when { font-family: 'Barlow Condensed', sans-serif; font-size: 21px; font-variant-numeric: tabular-nums; }
+.tag {
+  font-size: 10px; letter-spacing: .11em; text-transform: uppercase;
+  color: var(--verde); border: 1px solid #235B41; border-radius: 2px; padding: 3px 7px;
+}
+.empty { color: var(--gold-dim); font-size: 13px; padding: 22px 0; }
+
+/* -------------------------------------------------------------- 5. Modais */
+.sheet {
+  position: fixed; inset: 0; background: rgba(3, 10, 20, .86);
+  display: flex; align-items: center; justify-content: center;
+  padding: 18px; z-index: 40;
+}
+.card {
+  background: var(--navy-2); border: 1px solid var(--line);
+  width: 100%; max-width: 560px; padding: 22px;
+  max-height: 90vh; overflow: auto; border-radius: 3px;
+}
+.card.wide { max-width: 1080px; }
+.card h3 {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 23px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+.card .sub { font-size: 12px; color: var(--gold); margin: 3px 0 18px; }
+.card label {
+  display: block; font-size: 10px; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--gold-dim); margin: 16px 0 7px; font-weight: 600;
+}
+
+.opts { display: flex; gap: 6px; flex-wrap: wrap; }
+.opts button {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; background: transparent;
+  border: 1px solid var(--line); color: var(--gold);
+  padding: 8px 14px; cursor: pointer; border-radius: 2px;
+}
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+.fields .full { grid-column: 1 / -1; }
+
+textarea,
+input[type=text],
+input[type=date],
+input[type=number],
+input[type=password] {
+  width: 100%; background: var(--navy); border: 1px solid var(--line); color: var(--ink);
+  font-family: 'Inter', sans-serif; font-size: 13px; padding: 9px;
+  border-radius: 2px; resize: vertical;
+}
+
+.acts { display: flex; gap: 8px; margin-top: 22px; align-items: center; }
+.acts .go { background: var(--gold); color: var(--navy); border-color: var(--gold); }
+.acts .del { color: var(--vermelho); border-color: #5A2020; }
+.acts .spacer { flex: 1; }
+.acts button[disabled] { opacity: .45; cursor: not-allowed; }
+
+.hint { font-size: 12px; color: var(--gold); line-height: 1.65; margin-bottom: 12px; }
+.hint b { color: var(--ink); }
+.status { font-size: 12px; color: var(--verde); margin-top: 12px; min-height: 16px; }
+.status.bad { color: var(--vermelho); }
+
+#gwrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table.grid { width: 100%; border-collapse: collapse; min-width: 720px; }
+table.grid th {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--gold);
+  text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line);
+}
+table.grid td { padding: 0; border: 1px solid var(--line); }
+table.grid input {
+  width: 100%; background: transparent; border: 0; color: var(--ink);
+  font-size: 12px; padding: 8px; border-radius: 0;
+}
+table.grid input:focus { outline: 2px solid var(--gold); outline-offset: -2px; background: var(--navy); }
+.gridbar { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+.gridbar .spacer { flex: 1; }
+
+/* ------------------------------------------- 6. Login e configuração */
+#login {
+  position: fixed; inset: 0; background: var(--navy); z-index: 90;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+#login .stage { width: 100%; max-width: 430px; }
+#login .hazard {
+  height: 8px;
+  background: repeating-linear-gradient(135deg, var(--gold) 0 12px, var(--navy-3) 12px 24px);
+}
+#login .panel { background: var(--navy-2); border: 1px solid var(--line); border-top: 0; padding: 34px 32px 30px; }
+#login h1 {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 52px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; line-height: .92;
+}
+#login .tagline {
+  font-size: 11px; color: var(--gold); letter-spacing: .19em;
+  text-transform: uppercase; margin-top: 8px; font-weight: 600;
+}
+#login .rule { height: 1px; background: var(--line); margin: 24px 0; }
+#login label {
+  display: block; font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--gold-dim); font-weight: 600; margin-bottom: 9px;
+}
+#login label.opcional { margin-top: 18px; }
+#login label.opcional span { letter-spacing: .08em; text-transform: none; opacity: .75; }
+#login input {
+  width: 100%; background: var(--navy); border: 1px solid var(--line); color: var(--ink);
+  font-family: 'Barlow Condensed', sans-serif; font-size: 30px; font-weight: 600;
+  letter-spacing: .22em; text-align: center; font-variant-numeric: tabular-nums;
+  padding: 12px; border-radius: 2px;
+}
+#login input:focus { outline: none; border-color: var(--gold); }
+#login button {
+  width: 100%; margin-top: 14px; background: var(--gold); color: var(--navy);
+  font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; border: 0;
+  padding: 15px; border-radius: 2px; cursor: pointer;
+}
+#login button[disabled] { opacity: .5; cursor: progress; }
+#login .err { color: var(--vermelho); font-size: 12px; min-height: 17px; margin-top: 12px; text-align: center; }
+#login .foot {
+  font-size: 10px; color: var(--gold-dim); letter-spacing: .13em;
+  text-transform: uppercase; text-align: center; margin-top: 18px;
+}
+
+#setup { max-width: 640px; margin: 60px auto; background: var(--navy-2); border: 1px solid var(--line); padding: 28px; }
+#setup h2 {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 26px;
+  letter-spacing: .05em; text-transform: uppercase; margin-bottom: 10px;
+}
+#setup p { font-size: 13px; line-height: 1.7; color: var(--gold); margin-bottom: 10px; }
+#setup code { background: var(--navy); padding: 2px 6px; color: var(--ink); font-size: 12px; }
+#setup pre {
+  background: var(--navy); border: 1px solid var(--line); padding: 12px;
+  overflow-x: auto; margin-bottom: 12px;
+}
+#setup pre code { background: none; padding: 0; line-height: 1.7; }
+#setup .detalhe { color: var(--vermelho); font-size: 12px; }
+
+/* ------------------------------------------------------ 7. Avisos do PWA */
+.aviso {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 16px; border-radius: 3px; z-index: 60;
+  font-size: 12px; letter-spacing: .04em;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .45);
+  max-width: calc(100vw - 24px);
+}
+.aviso.off { background: #3A2A0A; border: 1px solid #7A5A14; color: #FFD68A; }
+.aviso.up { background: var(--navy-3); border: 1px solid var(--gold-dim); color: var(--ink); }
+.aviso button {
+  font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+  background: var(--gold); color: var(--navy); border: 0;
+  padding: 8px 14px; border-radius: 2px; white-space: nowrap;
+}
+.aviso button.ghost { background: transparent; color: var(--gold-dim); padding: 8px; }
+
+/* --------------------------------------------------------- 8. Responsivo */
+@media (max-width: 760px) {
+  body { padding: 12px; -webkit-text-size-adjust: 100%; }
+
+  .topbar { align-items: center; padding-bottom: 11px; gap: 10px; }
+  .brand h1 { font-size: 23px; }
+  .brand p { font-size: 10px; letter-spacing: .12em; margin-top: 3px; }
+  .who { font-size: 10px; gap: 7px; flex-wrap: wrap; margin-top: 7px; }
+  .clock .t { font-size: 30px; }
+  .clock .d { font-size: 10px; letter-spacing: .1em; }
+  .cut { font-size: 11px; padding: 9px 0 12px; line-height: 1.55; }
+
+  .tabs { gap: 5px; }
+  .tabs button { padding: 9px 12px; font-size: 10px; letter-spacing: .07em; flex: 1 1 auto; }
+  .tabs .spacer { display: none; }
+  .sync { width: 100%; text-align: right; order: 9; }
+
+  .filters { gap: 6px; padding: 10px; }
+  .filters label { width: 100%; margin-bottom: -2px; }
+  .filters select, .filters input { flex: 1 1 130px; min-width: 0; width: auto; }
+  .filters .chips { width: 100%; margin-left: 0; margin-top: 4px; }
+  .filters .chips button { flex: 1; padding: 9px 4px; }
+
+  .lane { margin-top: 18px; }
+  .lane-head h2 { font-size: 17px; letter-spacing: .09em; }
+  .lane-head .note { display: none; }
+
+  .row { grid-template-columns: 1fr auto; gap: 7px 10px; padding: 12px 13px; }
+  .row > .pill { grid-column: 1; grid-row: 1; justify-self: start; padding: 5px 12px; font-size: 13px; }
+  .row > .when { grid-column: 2; grid-row: 1; justify-self: end; font-size: 18px; }
+  .row > div    { grid-column: 1 / -1; grid-row: 2; }
+  .row > .unid  { grid-column: 1; grid-row: 3; justify-self: start; font-size: 13px; }
+  .row > .tag   { grid-column: 2; grid-row: 3; justify-self: end; }
+  .prod { font-size: 14px; line-height: 1.35; }
+  .meta { font-size: 11px; line-height: 1.45; }
+
+  .sheet { padding: 0; align-items: flex-end; }
+  .card, .card.wide {
+    max-width: 100%; max-height: 94vh;
+    padding: 18px 16px calc(22px + env(safe-area-inset-bottom));
+    border-radius: 10px 10px 0 0;
+  }
+  .card h3 { font-size: 20px; }
+  .fields { grid-template-columns: 1fr; }
+  .opts button { flex: 1 1 auto; padding: 11px 12px; }
+  .acts { flex-wrap: wrap; }
+  .acts button { flex: 1 1 auto; padding: 12px 14px; }
+  .acts .spacer { display: none; }
+  .acts .go { order: -1; width: 100%; flex-basis: 100%; }
+
+  #login { padding: 14px; }
+  #login h1 { font-size: 38px; }
+  #login .panel { padding: 26px 20px 24px; }
+
+  .aviso { left: 12px; right: 12px; transform: none; max-width: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
