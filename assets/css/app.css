@@ -166,7 +166,13 @@ body {
   font-size: 10px; letter-spacing: .11em; text-transform: uppercase;
   color: var(--verde); border: 1px solid #235B41; border-radius: 2px; padding: 3px 7px;
 }
+.tag.alerta { color: #FFB020; border-color: #7A5A14; }
 .empty { color: var(--gold-dim); font-size: 13px; padding: 22px 0; }
+
+/* A linha de fornecedor é CNPJ + nome + marca. O CNPJ mascarado não cabe na
+   coluna de 136px do quadro de programação, então ela tem grade própria. */
+.row.fornecedor { grid-template-columns: auto 1fr auto; }
+.row.fornecedor .unid { white-space: nowrap; justify-self: start; }
 
 /* -------------------------------------------------------------- 5. Modais */
 .sheet {
@@ -352,6 +358,11 @@ table.grid input:focus { outline: 2px solid var(--gold); outline-offset: -2px; b
   .row > .tag   { grid-column: 2; grid-row: 3; justify-self: end; }
   .prod { font-size: 14px; line-height: 1.35; }
   .meta { font-size: 11px; line-height: 1.45; }
+
+  .row.fornecedor { grid-template-columns: 1fr auto; }
+  .row.fornecedor > .unid { grid-column: 1; grid-row: 1; }
+  .row.fornecedor > .tag  { grid-column: 2; grid-row: 1; justify-self: end; }
+  .row.fornecedor > div   { grid-column: 1 / -1; grid-row: 2; }
 
   .sheet { padding: 0; align-items: flex-end; }
   .card, .card.wide {
