@@ -8,8 +8,15 @@ import { estado } from './estado.js';
 import * as sessao from './sessao.js';
 import * as dados from './dados.js';
 import { DB } from './db.js';
-import { esc, normData, normNumero } from './util.js';
-import { CAMPOS, COR, STATUS, PERFIS, podeEditarNaAba } from './regras.js';
+import { esc, normData, normNumero, soDigitos, formataCnpj, cnpjValido } from './util.js';
+import {
+  CAMPOS, COR, STATUS, PERFIS, podeEditarNaAba, statusPermitidos, podeCancelar,
+} from './regras.js';
+import { ligarAutocomplete, completarEmLote } from './fornecedores.js';
+
+/** Posição das colunas que conversam entre si na grade de inserção. */
+const COL_FORNECEDOR = CAMPOS.findIndex(([k]) => k === 'fornecedor');
+const COL_CNPJ = CAMPOS.findIndex(([k]) => k === 'cnpj');
 
 /* ----------------------------------------------------------- Infra comum */
 
@@ -76,12 +83,30 @@ export function abrirDetalhe(id) {
     item.unidade ? esc(item.unidade) : '',
   ].filter(Boolean).join(' · ');
 
+  // Item já cancelado e perfil que não cancela: o status vira informação fixa.
+  // Ele ainda registra descarga e observação — se o caminhão apareceu mesmo
+  // depois do cancelamento, isso precisa ficar escrito em algum lugar.
+  const statusTravado = statusAtual === 'CANCELADO' && !podeCancelar(perfil);
+  const opcoesStatus = statusPermitidos(perfil);
+
+  const blocoStatus = statusTravado
+    ? `<label>Status da entrega</label>
+       <div class="opts">
+         <button type="button" disabled
+           style="background:${COR.CANCELADO[1]};color:${COR.CANCELADO[0]};border-color:transparent;opacity:1">CANCELADO</button>
+       </div>
+       <div class="hint" style="margin-top:8px">
+         Cancelado pelo Compras. Se o material chegou mesmo assim, registre a
+         descarga e escreva nas observações — depois avise o comprador.
+       </div>`
+    : `<label>Status da entrega</label>
+       <div class="opts" id="op-st">${opcoesStatus.map((o) => `<button type="button" data-v="${o}">${o}</button>`).join('')}</div>`;
+
   const { folha, fechar, $ } = abrirFolha(`
     <h3>${esc(item.produto || item.codigo || 'Item')}</h3>
     <div class="sub">${cabecalho}</div>
     ${camposCadastro}
-    <label>Status da entrega</label>
-    <div class="opts" id="op-st">${STATUS.map((o) => `<button type="button" data-v="${o}">${o}</button>`).join('')}</div>
+    ${blocoStatus}
     <label>Descarga realizada</label>
     <div class="opts" id="op-dc">${['SIM', 'NAO'].map((o) => `<button type="button" data-v="${o}">${o}</button>`).join('')}</div>
     <label for="f-obs">Observações</label>
@@ -117,6 +142,9 @@ export function abrirDetalhe(id) {
   folha.querySelectorAll('#op-dc button').forEach((b) => {
     b.addEventListener('click', () => { descarga = b.dataset.v; marcar('#op-dc', descarga, () => '#D9A441'); });
   });
+
+  // Digitou o fornecedor, o CNPJ vem da base cadastrada.
+  if (cadastroLiberado) ligarAutocomplete($('#f-fornecedor'), $('#f-cnpj'));
 
   $('#x').addEventListener('click', fechar);
 
@@ -203,7 +231,19 @@ export function abrirInsercao() {
     const campos = folha.querySelectorAll('#gwrap input');
     campos.forEach((el, n) => { if (antes[n] !== undefined) el.value = antes[n]; });
     campos.forEach((el) => el.addEventListener('paste', colar));
+
+    // Cada linha ganha o par Fornecedor -> CNPJ ligado à base cadastrada.
+    for (let r = 0; r < linhas; r++) {
+      ligarAutocomplete(celula(r, COL_FORNECEDOR), celula(r, COL_CNPJ));
+    }
   }
+
+  /** Pares nome/CNPJ de todas as linhas, para o preenchimento pós-colagem. */
+  const paresDaGrade = () =>
+    Array.from({ length: linhas }, (_v, r) => ({
+      nome: celula(r, COL_FORNECEDOR),
+      cnpj: celula(r, COL_CNPJ),
+    }));
 
   /** Colagem em bloco vinda do Excel: tab separa coluna, quebra separa linha. */
   function colar(e) {
@@ -223,6 +263,12 @@ export function abrirInsercao() {
       const alvo = celula(r0 + ri, c0 + ci);
       if (alvo) alvo.value = String(valor).trim();
     }));
+
+    // Colou sem a coluna de CNPJ? A base preenche o que reconhecer.
+    const completados = completarEmLote(paresDaGrade());
+    if (completados) {
+      aviso($('#st'), `${completados} CNPJ(s) preenchido(s) pela base de fornecedores.`);
+    }
   }
 
   desenhar();
@@ -563,6 +609,201 @@ export function abrirUsuariosEmLote() {
     } catch (e) {
       travar(folha, false);
       aviso($('#st'), e.ehRede ? 'Sem conexão — nada foi cadastrado.' : e.message, true);
+    }
+  });
+}
+
+/* ------------------------------------------------ 6. Cadastro de fornecedor */
+
+/** @param {string|null} cnpj — null abre o formulário de novo fornecedor. */
+export function abrirFornecedor(cnpj) {
+  const f = cnpj ? dados.fornecedor(cnpj) : null;
+  const novo = !f;
+
+  const { folha, fechar, $ } = abrirFolha(`
+    <h3>${novo ? 'Novo fornecedor' : esc(f.nome)}</h3>
+    <div class="sub">${novo
+      ? 'Entra na base de consulta usada pelo preenchimento automático'
+      : `CNPJ ${formataCnpj(f.cnpj)} · cadastrado em ${new Date(f.criado_em).toLocaleDateString('pt-BR')}`}</div>
+
+    ${novo ? `<div class="hint">Vai carregar a base inteira?
+      <b>Use o botão “Colar lista” abaixo</b> e cole CNPJ e razão social direto da planilha.</div>` : ''}
+
+    <div class="fields">
+      <div>
+        <label for="fr-cnpj">CNPJ</label>
+        <input id="fr-cnpj" type="text" inputmode="numeric" maxlength="18"
+               value="${novo ? '' : formataCnpj(f.cnpj)}" ${novo ? '' : 'disabled'}>
+      </div>
+      <div>
+        <label for="fr-apelido">Apelido <span style="text-transform:none">(como o pessoal chama)</span></label>
+        <input id="fr-apelido" type="text" maxlength="60" value="${novo ? '' : esc(f.apelido || '')}">
+      </div>
+      <div class="full">
+        <label for="fr-nome">Razão social</label>
+        <input id="fr-nome" type="text" maxlength="120" value="${novo ? '' : esc(f.nome)}">
+      </div>
+    </div>
+
+    <div class="status" id="st" aria-live="polite"></div>
+    <div class="acts">
+      ${novo ? '<button type="button" id="lote">Colar lista</button>' : ''}
+      ${novo ? '' : '<button type="button" class="del" id="rm">Excluir</button>'}
+      <button type="button" id="x">Cancelar</button>
+      <span class="spacer"></span>
+      <button type="button" class="go" id="ok">${novo ? 'Cadastrar' : 'Salvar'}</button>
+    </div>`);
+
+  // Máscara e alerta de dígito verificador enquanto digita.
+  const campoCnpj = $('#fr-cnpj');
+  campoCnpj.addEventListener('blur', () => {
+    const d = soDigitos(campoCnpj.value);
+    if (d.length === 14) {
+      campoCnpj.value = formataCnpj(d);
+      if (!cnpjValido(d)) {
+        aviso($('#st'), 'Atenção: o dígito verificador não bate. Confira antes de salvar.', true);
+      }
+    }
+  });
+
+  $('#x').addEventListener('click', fechar);
+  if (novo) $('#lote').addEventListener('click', () => { fechar(); abrirFornecedoresEmLote(); });
+
+  if (!novo) {
+    $('#rm').addEventListener('click', async () => {
+      if (!confirm(`Excluir ${f.nome} da base de consulta?\n\nA programação já lançada não muda — o CNPJ continua gravado em cada entrega. O que se perde é o preenchimento automático daqui para a frente.`)) return;
+      travar(folha, true);
+      aviso($('#st'), 'Excluindo…');
+      try {
+        await dados.excluirFornecedor(f.cnpj);
+        fechar();
+      } catch (e) {
+        travar(folha, false);
+        aviso($('#st'), e.message, true);
+      }
+    });
+  }
+
+  $('#ok').addEventListener('click', async () => {
+    const valorCnpj = novo ? $('#fr-cnpj').value : f.cnpj;
+    const nome = $('#fr-nome').value.trim();
+    const apelido = $('#fr-apelido').value.trim();
+
+    if (soDigitos(valorCnpj).length !== 14) {
+      aviso($('#st'), 'O CNPJ precisa ter 14 dígitos.', true);
+      return;
+    }
+    if (!nome) {
+      aviso($('#st'), 'Informe a razão social.', true);
+      return;
+    }
+
+    travar(folha, true);
+    aviso($('#st'), 'Salvando…');
+    try {
+      const r = await dados.salvarFornecedor(soDigitos(valorCnpj), nome, apelido, true);
+      if (r && !r.ok) { travar(folha, false); aviso($('#st'), r.motivo, true); return; }
+      fechar();
+    } catch (e) {
+      travar(folha, false);
+      aviso($('#st'), e.ehRede ? 'Sem conexão — nada foi salvo.' : e.message, true);
+    }
+  });
+}
+
+/* --------------------------------------- 7. Carga da base de fornecedores */
+
+const COLUNAS_FORNECEDOR = [['cnpj', 'CNPJ'], ['nome', 'Razão social'], ['apelido', 'Apelido (opcional)']];
+
+export function abrirFornecedoresEmLote() {
+  let linhas = 15;
+
+  const { folha, fechar, $ } = abrirFolha(`
+    <h3>Carregar base de fornecedores</h3>
+    <div class="sub">Cole direto da planilha — a colagem se espalha a partir da célula selecionada</div>
+    <div class="hint">
+      Colunas: <b>CNPJ · Razão social · Apelido</b>. O CNPJ aceita com ou sem
+      pontuação. Linha sem CNPJ de 14 dígitos ou sem razão social é descartada.
+      <br><br>
+      <b>Pode repetir a carga quando quiser:</b> quem já está cadastrado tem o
+      nome atualizado, não duplica. Assim você joga a base nova do ERP por cima
+      da antiga sem medo.
+    </div>
+    <div id="gwrap"></div>
+    <div class="gridbar">
+      <button type="button" id="mais">+ mais 15 linhas</button>
+      <span class="spacer"></span>
+      <span class="status" id="st" aria-live="polite"></span>
+    </div>
+    <div class="acts">
+      <button type="button" id="x">Cancelar</button>
+      <span class="spacer"></span>
+      <button type="button" class="go" id="ok">Carregar</button>
+    </div>`, { largo: true });
+
+  const celula = (r, c) => folha.querySelector(`#gwrap input[data-r="${r}"][data-c="${c}"]`);
+
+  function desenhar() {
+    const antes = [...folha.querySelectorAll('#gwrap input')].map((i) => i.value);
+    folha.querySelector('#gwrap').innerHTML = `
+      <table class="grid" style="min-width:620px">
+        <thead><tr>${COLUNAS_FORNECEDOR.map(([, r]) => `<th>${r}</th>`).join('')}</tr></thead>
+        <tbody>${Array.from({ length: linhas }, (_, r) =>
+          `<tr>${COLUNAS_FORNECEDOR.map((_c, c) =>
+            `<td><input type="text" data-r="${r}" data-c="${c}" autocomplete="off"></td>`).join('')}</tr>`
+        ).join('')}</tbody>
+      </table>`;
+    const campos = folha.querySelectorAll('#gwrap input');
+    campos.forEach((el, n) => { if (antes[n] !== undefined) el.value = antes[n]; });
+    campos.forEach((el) => el.addEventListener('paste', colar));
+  }
+
+  function colar(e) {
+    const texto = (e.clipboardData || window.clipboardData).getData('text');
+    if (!texto.includes('\t') && !texto.includes('\n')) return;
+    e.preventDefault();
+    const r0 = Number(e.target.dataset.r);
+    const c0 = Number(e.target.dataset.c);
+    const matriz = texto.replace(/\r/g, '').split('\n').filter((l) => l.length).map((l) => l.split('\t'));
+    if (r0 + matriz.length > linhas) { linhas = r0 + matriz.length; desenhar(); }
+    matriz.forEach((linha, ri) => linha.forEach((valor, ci) => {
+      const alvo = celula(r0 + ri, c0 + ci);
+      if (alvo) alvo.value = String(valor).trim();
+    }));
+  }
+
+  desenhar();
+  $('#mais').addEventListener('click', () => { linhas += 15; desenhar(); });
+  $('#x').addEventListener('click', fechar);
+
+  $('#ok').addEventListener('click', async () => {
+    const novos = [];
+    let suspeitos = 0;
+
+    for (let r = 0; r < linhas; r++) {
+      const v = COLUNAS_FORNECEDOR.map((_c, c) => (celula(r, c)?.value || '').trim());
+      if (v.every((x) => !x)) continue;
+      const cnpj = soDigitos(v[0]);
+      if (cnpj.length === 14 && !cnpjValido(cnpj)) suspeitos++;
+      novos.push({ cnpj, nome: v[1], apelido: v[2] });
+    }
+
+    if (!novos.length) { aviso($('#st'), 'Nenhuma linha preenchida.', true); return; }
+
+    travar(folha, true);
+    aviso($('#st'), `Carregando ${novos.length} fornecedor(es)…`);
+    try {
+      const r = await dados.inserirFornecedores(novos);
+      fechar();
+      alert(
+        `Base atualizada.\n\n` +
+        `${r.novos} novo(s)\n${r.atualizados} atualizado(s)` +
+        (r.ignorados ? `\n${r.ignorados} descartado(s) — CNPJ fora de 14 dígitos ou sem razão social` : '') +
+        (suspeitos ? `\n\nAtenção: ${suspeitos} CNPJ(s) entraram com dígito verificador inconsistente. Eles ficam marcados na lista.` : '')
+      );
+    } catch (e) {
+      travar(folha, false);
+      aviso($('#st'), e.ehRede ? 'Sem conexão — nada foi carregado.' : e.message, true);
     }
   });
 }

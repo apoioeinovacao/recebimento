@@ -35,6 +35,7 @@ function traduzir(msg, status) {
   if (/sessao_invalida/.test(m))          return ['sessao',     'Sua sessão expirou. Entre novamente.'];
   if (/senha_expirada/.test(m))           return ['senha',      'Troque a senha padrão antes de continuar.'];
   if (/sem_permissao/.test(m))            return ['permissao',  'Seu perfil não permite esta ação.'];
+  if (/cancelamento_restrito/.test(m))    return ['permissao',  'Cancelar entrega é atribuição do Compras.'];
   if (/ultimo_master/.test(m))            return ['validacao',  'O sistema não pode ficar sem nenhum master ativo.'];
   if (/registro_nao_encontrado/.test(m))  return ['validacao',  'Este item não existe mais — alguém excluiu.'];
   if (/status_invalido/.test(m))          return ['validacao',  'Status de entrega inválido.'];
@@ -139,4 +140,19 @@ export const DB = {
   usuarioResetar: (token, matricula) => rpc('app_usuario_resetar', { p_token: token, p_matricula: matricula }),
 
   usuarioExcluir: (token, matricula) => rpc('app_usuario_excluir', { p_token: token, p_matricula: matricula }),
+
+  /* ---- Base de fornecedores. Leitura para todos; escrita só master/compras. ---- */
+
+  fornecedores: (token) => rpc('app_fornecedores', { p_token: token }).then((r) => r || []),
+
+  fornecedorSalvar: (token, cnpj, nome, apelido, ativo) =>
+    rpc('app_fornecedor_salvar', {
+      p_token: token, p_cnpj: cnpj, p_nome: nome, p_apelido: apelido, p_ativo: ativo,
+    }),
+
+  fornecedoresInserir: (token, linhas) =>
+    rpc('app_fornecedores_inserir', { p_token: token, p_linhas: linhas }),
+
+  fornecedorExcluir: (token, cnpj) =>
+    rpc('app_fornecedor_excluir', { p_token: token, p_cnpj: cnpj }),
 };

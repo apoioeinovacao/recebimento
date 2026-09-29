@@ -1,8 +1,8 @@
 /* ===========================================================================
  * ARQUIVO GERADO — não edite à mão.
  * Origem: .env
- * Gerado: 2026-09-17T16:42:16.356Z
- * Build:  177fd180df29
+ * Gerado: 2026-09-28T17:20:34.313Z
+ * Build:  f23b2826542b
  *
  * Para mudar qualquer valor daqui, edite o .env e rode:
  *     node scripts/gerar-config.mjs
@@ -48,6 +48,6 @@
     "INTERVALO_SYNC": 15000,
     "INTERVALO_RELOGIO": 30000,
     "SESSAO_HORAS": 12,
-    "BUILD": "177fd180df29"
+    "BUILD": "f23b2826542b"
   });
 })(typeof self !== 'undefined' ? self : globalThis);

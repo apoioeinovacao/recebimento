@@ -155,3 +155,41 @@ export async function excluirUsuario(matricula) {
 
 export const usuario = (matricula) =>
   estado.usuarios.find((u) => u.matricula === matricula) || null;
+
+/* ------------------------------------------------------ Fornecedores ---- */
+/* Carregada uma vez após o login e mantida em memória: é ela que alimenta o
+ * preenchimento automático de CNPJ, que precisa responder a cada tecla. */
+
+export async function carregarFornecedores({ silencioso = false } = {}) {
+  try {
+    estado.fornecedores = await DB.fornecedores(sessao.token());
+    notificar('fornecedores');
+  } catch (e) {
+    // Base indisponível não pode derrubar o painel: sem ela o comprador
+    // simplesmente digita o CNPJ à mão, como fazia antes.
+    if (!silencioso) throw e;
+    console.warn('[dados] base de fornecedores indisponível', e.message);
+  }
+  return estado.fornecedores;
+}
+
+export async function salvarFornecedor(cnpj, nome, apelido, ativo) {
+  const r = await DB.fornecedorSalvar(sessao.token(), cnpj, nome, apelido, ativo);
+  await carregarFornecedores();
+  return r;
+}
+
+export async function inserirFornecedores(linhas) {
+  const r = await DB.fornecedoresInserir(sessao.token(), linhas);
+  await carregarFornecedores();
+  return r;
+}
+
+export async function excluirFornecedor(cnpj) {
+  const r = await DB.fornecedorExcluir(sessao.token(), cnpj);
+  await carregarFornecedores();
+  return r;
+}
+
+export const fornecedor = (cnpj) =>
+  estado.fornecedores.find((f) => f.cnpj === cnpj) || null;

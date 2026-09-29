@@ -12,9 +12,9 @@ import * as sessao from './sessao.js';
 import * as dados from './dados.js';
 import { estado, aoMudar, limpar } from './estado.js';
 import * as ui from './ui.js';
-import { abrirInsercao, abrirTrocaSenha, abrirUsuario } from './modais.js';
+import { abrirInsercao, abrirTrocaSenha, abrirUsuario, abrirFornecedor } from './modais.js';
 import { exportarCSV } from './exportar.js';
-import { ABAS } from './regras.js';
+import { ABAS, podeCadastrar } from './regras.js';
 import {
   registrarServiceWorker, vigiarConexao, avisoOffline, prepararInstalacao, anunciarVersao,
 } from './pwa.js';
@@ -75,6 +75,11 @@ async function abrirPainel() {
 
   ligarTimers();
   await dados.carregar();
+
+  // A base de fornecedores alimenta o preenchimento automático de CNPJ, que
+  // precisa responder a cada tecla. Carrega uma vez, em segundo plano, e só
+  // para quem lança programação. Falhar aqui não atrapalha o resto.
+  if (podeCadastrar(sessao.perfil())) dados.carregarFornecedores({ silencioso: true });
 }
 
 /** Folha de troca de senha que não fecha até a senha ser trocada. */
@@ -93,6 +98,7 @@ function exigirTrocaDeSenha() {
 /** Carrega o que a aba corrente precisa. */
 async function carregarAba() {
   if (estado.aba === 'usuarios') await dados.carregarUsuarios();
+  else if (estado.aba === 'fornecedores') await dados.carregarFornecedores();
   else await dados.carregar({ silencioso: true });
 }
 
@@ -166,9 +172,10 @@ function ligarEventos() {
     }
   });
 
-  // O mesmo botão serve às duas abas que cadastram coisas.
+  // O mesmo botão serve às abas que cadastram coisas.
   $('btn-add').addEventListener('click', () => {
     if (estado.aba === 'usuarios') abrirUsuario(null);
+    else if (estado.aba === 'fornecedores') abrirFornecedor(null);
     else abrirInsercao();
   });
 

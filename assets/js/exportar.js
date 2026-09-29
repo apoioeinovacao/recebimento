@@ -8,7 +8,8 @@
 
 import { estado } from './estado.js';
 import { visiveis } from './ui.js';
-import { situacao } from './regras.js';
+import { situacao, podeVerVolume } from './regras.js';
+import * as sessao from './sessao.js';
 import { iso, dataBR } from './util.js';
 
 const CABECALHO = [
@@ -16,6 +17,9 @@ const CABECALHO = [
   'OrdemCompra', 'Unidade', 'Situacao', 'Status', 'Descarga',
   'Observacoes', 'AlteradoPor', 'AlteradoEm',
 ];
+
+/** Posição da coluna Volume — ela cai fora quando o perfil não pode vê-la. */
+const COL_VOLUME = CABECALHO.indexOf('Volume');
 
 /**
  * Neutraliza fórmula em célula de CSV. Sem isto, um fornecedor cadastrado como
@@ -29,16 +33,20 @@ function celula(valor) {
 
 export function exportarCSV() {
   const agora = new Date();
+  const comVolume = podeVerVolume(sessao.perfil());
 
-  const linhas = visiveis().map((it) => [
+  // Sem permissão, a coluna não é esvaziada: ela deixa de existir no arquivo.
+  const semVolume = (linha) => (comVolume ? linha : linha.filter((_v, i) => i !== COL_VOLUME));
+
+  const linhas = visiveis().map((it) => semVolume([
     it.codigo, it.produto, it.fornecedor, it.cnpj, it.volume,
     dataBR(it.data_entrega), it.ordem_compra, it.unidade,
     situacao(it, agora), it.status_entrega, it.descarga, it.observacoes,
     it.alterado_por,
     it.alterado_em ? new Date(it.alterado_em).toLocaleString('pt-BR') : '',
-  ]);
+  ]));
 
-  const csv = '﻿' + [CABECALHO, ...linhas]
+  const csv = '﻿' + [semVolume(CABECALHO), ...linhas]
     .map((r) => r.map(celula).join(';'))
     .join('\r\n');
 

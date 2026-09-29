@@ -13,6 +13,8 @@ export const estado = {
   dados: [],
   /** Usuários cadastrados. Só é preenchido para o perfil master. */
   usuarios: [],
+  /** Base de fornecedores, usada no preenchimento automático de CNPJ. */
+  fornecedores: [],
   /** Aba corrente: compras | almox | fiscal | hist. */
   aba: 'almox',
   /** Filtros da aba corrente. */
@@ -44,6 +46,7 @@ export function notificar(motivo = '') {
 export function limpar() {
   estado.dados = [];
   estado.usuarios = [];
+  estado.fornecedores = [];
   estado.filtro = {};
   estado.assinatura = '';
   estado.doCache = false;

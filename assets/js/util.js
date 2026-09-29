@@ -57,6 +57,42 @@ export function normNumero(valor) {
 /** Minutos desde a meia-noite -> "14:00". */
 export const hhmm = (min) => `${zz(Math.floor(min / 60))}:${zz(min % 60)}`;
 
+/* ------------------------------------------------------------------ CNPJ */
+
+/** Tira tudo que não é dígito. */
+export const soDigitos = (v) => String(v == null ? '' : v).replace(/\D/g, '');
+
+/** 14 dígitos -> "12.345.678/0001-90". Devolve o original se não der. */
+export function formataCnpj(valor) {
+  const d = soDigitos(valor);
+  if (d.length !== 14) return String(valor == null ? '' : valor);
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+}
+
+/**
+ * Confere os dois dígitos verificadores do CNPJ.
+ * Serve para sinalizar erro de digitação na base — não para barrar cadastro,
+ * porque base antiga sempre tem algum registro torto que ainda é útil.
+ */
+export function cnpjValido(valor) {
+  const d = soDigitos(valor);
+  if (d.length !== 14 || /^(\d)\1{13}$/.test(d)) return false;
+
+  // Pesos decrescentes de (tamanho-7) até 2, reiniciando em 9 ao passar de 2.
+  const digito = (ate) => {
+    let peso = ate - 7;
+    let soma = 0;
+    for (let i = 0; i < ate; i++) {
+      soma += Number(d[i]) * peso;
+      peso = peso > 2 ? peso - 1 : 9;
+    }
+    const r = soma % 11;
+    return r < 2 ? 0 : 11 - r;
+  };
+
+  return digito(12) === Number(d[12]) && digito(13) === Number(d[13]);
+}
+
 /** Agrupa chamadas seguidas (digitação em campo de filtro). */
 export function atrasar(fn, ms = 180) {
   let id;

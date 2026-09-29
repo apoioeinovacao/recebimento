@@ -7,12 +7,13 @@
 import { CFG } from './env.js';
 import { estado } from './estado.js';
 import * as sessao from './sessao.js';
-import { esc, zz, hhmm, diaMes, atrasar } from './util.js';
+import { esc, zz, hhmm, diaMes, atrasar, formataCnpj, cnpjValido } from './util.js';
 import {
   COR, RANK, NOME_ABA, ROTULO_PERFIL, ABAS, FAIXAS, TITULO_FAIXA, NOTA_FAIXA,
   situacao, faixa, diasAte, cortesDe, ehHistorico, podeCadastrar, podeGerirUsuarios,
+  podeGerirFornecedores,
 } from './regras.js';
-import { abrirDetalhe, abrirUsuario } from './modais.js';
+import { abrirDetalhe, abrirUsuario, abrirFornecedor } from './modais.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -63,17 +64,16 @@ export function abas() {
 
   // O botão de ação muda de dono conforme a aba.
   const add = $('btn-add');
-  if (estado.aba === 'usuarios' && podeGerirUsuarios(sessao.perfil())) {
-    add.hidden = false;
-    add.textContent = 'Novo usuário';
-  } else if (estado.aba === 'compras' && podeCadastrar(sessao.perfil())) {
-    add.hidden = false;
-    add.textContent = 'Inserir programação';
-  } else {
-    add.hidden = true;
-  }
+  const acao = {
+    usuarios:     podeGerirUsuarios(sessao.perfil()) && 'Novo usuário',
+    fornecedores: podeGerirFornecedores(sessao.perfil()) && 'Novo fornecedor',
+    compras:      podeCadastrar(sessao.perfil()) && 'Inserir programação',
+  }[estado.aba];
 
-  $('btn-exp').hidden = estado.aba === 'usuarios';
+  add.hidden = !acao;
+  if (acao) add.textContent = acao;
+
+  $('btn-exp').hidden = estado.aba === 'usuarios' || estado.aba === 'fornecedores';
 }
 
 export function sincronismo() {
@@ -94,6 +94,7 @@ function valoresDe(campo) {
 }
 
 const LAYOUT_FILTROS = {
+  compras: [['sel', 'fornecedor', 'Fornecedor'], ['sel', 'unidade', 'Unidade'], ['txt', 'produto', 'Produto'], ['txt', 'ordem_compra', 'OC']],
   almox:  [['sel', 'unidade', 'Unidade'], ['sel', 'fornecedor', 'Fornecedor'], ['txt', 'produto', 'Produto'], ['txt', 'ordem_compra', 'OC']],
   fiscal: [['sel', 'fornecedor', 'Fornecedor'], ['txt', 'cnpj', 'CNPJ'], ['txt', 'ordem_compra', 'OC'], ['sel', 'unidade', 'Unidade']],
   hist:   [['sel', 'unidade', 'Unidade'], ['sel', 'fornecedor', 'Fornecedor'], ['txt', 'produto', 'Produto'], ['txt', 'ordem_compra', 'OC']],
@@ -112,7 +113,9 @@ let barraMontadaPara = null;
 export function filtros() {
   const caixa = $('filters');
 
-  if (estado.aba === 'compras' || estado.aba === 'usuarios') {
+  // Abas de cadastro (usuários, fornecedores) têm busca própria; as de
+  // programação usam a barra padrão.
+  if (!LAYOUT_FILTROS[estado.aba]) {
     caixa.className = '';
     caixa.innerHTML = '';
     barraMontadaPara = estado.aba;
@@ -323,10 +326,62 @@ function quadroUsuarios() {
   });
 }
 
+/* --------------------------------------------------- Quadro: fornecedores */
+
+function quadroFornecedores() {
+  const lista = estado.fornecedores;
+
+  if (!lista.length) {
+    $('board').innerHTML = `<div class="empty">
+      Nenhum fornecedor cadastrado ainda.<br><br>
+      Clique em <b>Novo fornecedor</b> e depois em <b>Colar lista</b> para trazer
+      a base inteira de uma vez, direto da planilha.<br><br>
+      Com a base carregada, ao digitar o nome do fornecedor na programação o
+      CNPJ é preenchido sozinho.
+    </div>`;
+    return;
+  }
+
+  const invalidos = lista.filter((f) => !cnpjValido(f.cnpj)).length;
+  const aviso = invalidos
+    ? `<div class="empty" style="padding:18px 0 0">${invalidos} CNPJ(s) com dígito
+       verificador inconsistente — marcados abaixo. Continuam funcionando, mas
+       provavelmente há erro de digitação na base de origem.</div>`
+    : '';
+
+  const linhas = lista.map((f) => {
+    const suspeito = !cnpjValido(f.cnpj);
+    return `<div class="row fornecedor click" data-cnpj="${esc(f.cnpj)}" tabindex="0" role="button"
+         style="border-left-color:${suspeito ? '#FFB020' : '#3DD68C'}">
+      <span class="unid">${formataCnpj(f.cnpj)}</span>
+      <div>
+        <div class="prod">${esc(f.nome)}</div>
+        ${f.apelido ? `<div class="meta">também conhecido como ${esc(f.apelido)}</div>` : ''}
+      </div>
+      ${suspeito ? '<span class="tag alerta">CNPJ suspeito</span>' : '<span></span>'}
+    </div>`;
+  }).join('');
+
+  $('board').innerHTML = `${aviso}<div class="lane">
+      <div class="lane-head"><h2>Fornecedores</h2><span class="n">${lista.length}</span>
+        <span class="note">digitando o nome na programação, o CNPJ vem junto</span></div>
+      ${linhas}
+    </div>`;
+
+  document.querySelectorAll('#board .row.click').forEach((el) => {
+    const abrir = () => abrirFornecedor(el.dataset.cnpj);
+    el.addEventListener('click', abrir);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(); }
+    });
+  });
+}
+
 /* --------------------------------------------------- Quadro: programação */
 
 export function quadro() {
   if (estado.aba === 'usuarios') { quadroUsuarios(); return; }
+  if (estado.aba === 'fornecedores') { quadroFornecedores(); return; }
 
   const agora = new Date();
   const alvo = $('board');

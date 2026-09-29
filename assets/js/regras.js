@@ -34,6 +34,7 @@ export const RANK = {
 export const NOME_ABA = {
   compras: 'Compras', almox: 'Almoxarifado', fiscal: 'Fiscal',
   hist: 'Histórico', usuarios: 'Usuários e acessos',
+  fornecedores: 'Base de fornecedores',
 };
 
 export const PERFIS = [
@@ -50,8 +51,8 @@ export const ROTULO_PERFIL = {
 
 /** Abas visíveis por perfil. Espelha o que o banco permite, não o substitui. */
 export const ABAS = {
-  master:   ['compras', 'almox', 'fiscal', 'hist', 'usuarios'],
-  compras:  ['compras', 'almox', 'fiscal', 'hist'],
+  master:   ['compras', 'almox', 'fiscal', 'hist', 'fornecedores', 'usuarios'],
+  compras:  ['compras', 'almox', 'fiscal', 'hist', 'fornecedores'],
   operador: ['almox', 'fiscal', 'hist'],
 };
 
@@ -153,6 +154,24 @@ export const ehHistorico = (item) =>
 export const podeCadastrar = (perfil) => perfil === 'master' || perfil === 'compras';
 
 export const podeGerirUsuarios = (perfil) => perfil === 'master';
+
+export const podeGerirFornecedores = (perfil) => podeCadastrar(perfil);
+
+/**
+ * Volume é informação de compra. A doca confere contando o que desceu do
+ * caminhão — saber de antemão o número esperado enviesa a conferência.
+ * Vale para a tela e para o CSV; o banco também não devolve o campo.
+ */
+export const podeVerVolume = (perfil) => perfil !== 'operador';
+
+/**
+ * Cancelar é decisão de Compras: quem sabe que a OC caiu é o comprador.
+ * A doca registra o que chegou — inclusive "não chegou" — mas não cancela.
+ */
+export const podeCancelar = (perfil) => perfil !== 'operador';
+
+export const statusPermitidos = (perfil) =>
+  podeCancelar(perfil) ? STATUS : STATUS.filter((s) => s !== 'CANCELADO');
 
 export const podeEditarNaAba = (perfil, aba) =>
   perfil === 'master' || (perfil === 'compras' && aba === 'compras');
