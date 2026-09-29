@@ -38,6 +38,7 @@ const SHELL = [
   './assets/js/cache.js',
   './assets/js/estado.js',
   './assets/js/dados.js',
+  './assets/js/fornecedores.js',
   './assets/js/ui.js',
   './assets/js/modais.js',
   './assets/js/exportar.js',

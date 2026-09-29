@@ -1,0 +1,26 @@
+# Configuração do ambiente — contém a chave SECRETA. Nunca versionar.
+.env
+.env.local
+.env.*.local
+
+# NOTA sobre assets/js/config.js
+#
+# Ele NÃO está ignorado, de propósito. É um arquivo gerado, mas precisa ser
+# publicado: é dele que o navegador lê a URL e a chave publicável. Num deploy
+# sem build (subir os arquivos direto para o GitHub Pages), ignorá-lo faria o
+# painel abrir na tela "Falta configurar".
+#
+# Não há risco: tudo dentro dele é público por natureza — chega ao navegador de
+# qualquer usuário. O que protege os dados é a RLS no banco, não o sigilo deste
+# arquivo. O gerador se recusa a escrever credencial secreta aqui.
+#
+# Se algum dia você migrar para o deploy automático (.github/workflows), pode
+# voltar a ignorá-lo: lá ele é gerado a cada publicação, a partir dos Secrets.
+
+# Lixo de editor / sistema
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+node_modules/
